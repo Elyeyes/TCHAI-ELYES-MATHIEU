@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "emitter": "Alice",
+    "receptor": "Bob",
+    "amount": 50.0,
+    "timestamp": "2025-12-15T11:46:51.351941"
+  }
+]
