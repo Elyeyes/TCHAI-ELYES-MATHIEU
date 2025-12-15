@@ -202,8 +202,21 @@ print(response.json())
 
 ## Points d'améliorations
 
-- Les données sont stockées en **mémoire** uniquement
-- Les transactions sont **perdues** au redémarrage du serveur
 - Aucune authentification n'est implémentée
 - Les montants doivent être **positifs**
 
+## Tests
+```bash
+# 1. Installer les dépendances
+pip install -r requirements.txt
+
+# 2. Lancer l'API principale
+python tchai_v1.py
+
+# 3. Dans un autre terminal, exécuter les tests
+chmod +x tests/run_tests.sh
+./tests/run_tests.sh
+
+# Ou exécuter un test spécifique
+python tests/modif_fichier.py
+```
