@@ -135,30 +135,30 @@ def afficher_solde(person):
                                    if t['emitter'] == person or t['receptor'] == person])
     }), 200
 
-# @app.route('/verify', methods=['GET'])
-# def verify_integrity():
-#     errors = []
-#     for t in transactions:
-#         expected_hash = hash(t['emitter'], t['receptor'], t['amount'], t['timestamp'])
-#         if t['hash'] != expected_hash:
-#             errors.append({
-#                 "transaction_id": t['id'],
-#                 "expected_hash": expected_hash,
-#                 "found_hash": t['hash'],
-#                 "status" : "Corrompue"
-#             })
-#     if not errors:
-#         return jsonify({
-#             "status": "Ok",
-#             "message": "Toutes les transactions sont intègres.",
-#             "total_transactions": len(transactions)
-#             }), 200
-#     else:
-#         return jsonify({
-#             "status": "Erreur",
-#             "message": "Certaines transactions sont corrompues.",
-#             "corrupted_transactions": errors,
-#             "total_corrupted": len(errors)
-#             }), 418
-# if __name__ == '__main__':
+@app.route('/verify', methods=['GET'])
+def verify_integrity():
+    errors = []
+    for t in transactions:
+        expected_hash = hash(t['emitter'], t['receptor'], t['amount'], t['timestamp'])
+        if t['hash'] != expected_hash:
+            errors.append({
+                "transaction_id": t['id'],
+                "expected_hash": expected_hash,
+                "found_hash": t['hash'],
+                "status" : "Corrompue"
+            })
+    if not errors:
+        return jsonify({
+            "status": "Ok",
+            "message": "Toutes les transactions sont intègres.",
+            "total_transactions": len(transactions)
+            }), 200
+    else:
+        return jsonify({
+            "status": "Erreur",
+            "message": "Certaines transactions sont corrompues.",
+            "corrupted_transactions": errors,
+            "total_corrupted": len(errors)
+            }), 418
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
