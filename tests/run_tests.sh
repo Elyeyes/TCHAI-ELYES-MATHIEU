@@ -34,7 +34,7 @@ echo "Voulez-vous éxecuter le test? (o/n)"
 read -p "> " response
 
 if [ "$response" = "o" ] || [ "$response" = "O" ]; then
-    python tests/supr_transac.py
+    python tests/suppr_transac.py
     
 fi
 
