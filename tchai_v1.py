@@ -1,5 +1,3 @@
-import hashlib
-from xml.parsers.expat import errors
 from flask import Flask, request, jsonify
 from datetime import datetime
 import json
@@ -8,35 +6,11 @@ import os
 app = Flask(__name__)
 
 DATA_FILE = "TCHAI-ELYES-MATHIEU/transactions.json"
-DATA_CORRUPTED = "TCHAI-ELYES-MATHIEU/transactions_corrupted.json"
-
-def hash(emitter, receptor, amount, timestamp):
-    transaction_string = f"{emitter}{receptor}{timestamp}{amount}"
-    return hashlib.sha256(transaction_string.encode()).hexdigest()
 
 def load_transactions():
-    if os.path.exists(DATA_CORRUPTED):
-        with open(DATA_CORRUPTED, 'r') as f:
-            errors = json.load(f)
-    else:
-        errors = []
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
-            transactions = json.load(f)
-        for t in transactions: 
-            expected_hash = hash(t['emitter'], t['receptor'], t['amount'], t['timestamp'])
-            if t['hash'] != expected_hash:
-                errors.append({
-                    "transaction_id": t['id'],
-                    "expected_hash": expected_hash,
-                    "found_hash": t['hash'],
-                    "status" : "Corrompue"
-                })
-                transactions.remove(t)
-        with open(DATA_CORRUPTED, 'w') as f:
-                json.dump(errors, f, indent=2)
-        save_transactions(transactions)
-        return transactions
+            return json.load(f)
     return []
 
 def save_transactions(transactions):
@@ -48,13 +22,12 @@ transactions = load_transactions()
 @app.route('/')
 def home():
     return jsonify({
-        "message": "Bienvenue sur Tchai_v2",
+        "message": "Bienvenue sur Tchai_v1",
         "endpoints": {
             "POST /transaction": "Enregistrer une transaction",
             "GET /transactions": "Afficher toutes les transactions",
             "GET /transactions/<person>": "Afficher les transactions d'une personne chronologiquement",
-            "GET /solde/<person>": "Afficher le solde d'une personne",
-            "GET /verify": "Verifier l'integrite des transactions"
+            "GET /solde/<person>": "Afficher le solde d'une personne"
         }
     })
 
@@ -73,18 +46,12 @@ def new_transaction():
     except ValueError:
         return jsonify({"erreur": "Le montant doit être un nombre"}), 400
     
-    emitter = data['emitter']
-    receptor = data['receptor']
-    timestamp = datetime.now().isoformat()
-    h = hash(emitter, receptor, amount, timestamp)
-
     transaction = {
         'id': len(transactions) + 1,
         'emitter': data['emitter'],
         'receptor': data['receptor'],
         'amount': amount,
         'timestamp': datetime.now().isoformat(),
-        'hash': h
     }
     
     transactions.append(transaction)
@@ -135,30 +102,5 @@ def afficher_solde(person):
                                    if t['emitter'] == person or t['receptor'] == person])
     }), 200
 
-@app.route('/verify', methods=['GET'])
-def verify_integrity():
-    errors = []
-    for t in transactions:
-        expected_hash = hash(t['emitter'], t['receptor'], t['amount'], t['timestamp'])
-        if t['hash'] != expected_hash:
-            errors.append({
-                "transaction_id": t['id'],
-                "expected_hash": expected_hash,
-                "found_hash": t['hash'],
-                "status" : "Corrompue"
-            })
-    if not errors:
-        return jsonify({
-            "status": "Ok",
-            "message": "Toutes les transactions sont justes.",
-            "total_transactions": len(transactions)
-            }), 200
-    else:
-        return jsonify({
-            "status": "Erreur",
-            "message": "Certaines transactions sont corrompues.",
-            "corrupted_transactions": errors,
-            "total_corrupted": len(errors)
-            }), 418
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

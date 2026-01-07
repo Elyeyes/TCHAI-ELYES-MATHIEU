@@ -1,7 +1,7 @@
 # TCHAI-ELYES-MATHIEU
 chaine de transaction
 
-## Tchaî v1
+## Tchaî v2
 
 ### Base URL
 ```
@@ -187,6 +187,26 @@ print(response.json())
 
 ---
 
+### 5. Vérifier les transactions
+Vérifier l’intégrité des données en recalculant les hashs à partir des données et en les comparant
+avec les hashs stockés précédemment.
+
+**Endpoint**
+```http
+GET /verify
+```
+
+**Réponse (200 OK)**
+```json
+{
+{
+  "message": "Toutes les transactions sont justes.",
+  "status": "Ok",
+  "total_transactions": 1
+}
+}
+```
+---
 ### Structure d'une transaction
 
 ```json
@@ -196,6 +216,7 @@ print(response.json())
   "receptor": "nom",                          // Personne qui reçoit
   "amount": 50.0,                             // Montant de la transaction
   "timestamp": "2024-03-15T14:30:00.123456",  // Date et heure
+  "hash": "9c9a78db16d62293b59bcb4c7b6fecfc982e874b1c8d6c31b9d93556ad01d247" // Hash de la transaction
 }
 ```
 
@@ -204,6 +225,7 @@ print(response.json())
 
 - Aucune authentification n'est implémentée
 - Les montants doivent être **positifs**
+- Pas de tracabilité des transactions (entre elles)
 
 ## Tests
 ```bash
@@ -220,3 +242,14 @@ chmod +x tests/run_tests.sh
 # Ou exécuter un test spécifique
 python tests/modif_fichier.py
 ```
+
+### Modifier transaction
+On attaque le fichier qui sauvegarde les transactions en modifiant notamment le montant Tchai_v1 y est vulnérable.
+Avec un hash l'attaque ne fonctionne plus dans Tchai_v2 la transactions peut être supprimé (pour l'instant sauvegardé à part dans transactions_corrupted)
+
+On a que les transactions non corrompues (non attaqué), il faudrait ne pas perdre les transactions effectué mais pour cela il faut un système ou plusieurs machines ont leur sauvegarde de transactions et se les partagent régulièrement. Il sera difficile pour l'attaquant de modifier plusieurs fois la même transactions sur des machines dispersés.
+
+Sinon la version simple c'est accepter de perdre des transactions
+
+### Supprimer transaction
+On supprime une transactions stockés dans le fichier.

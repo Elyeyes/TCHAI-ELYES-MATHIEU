@@ -25,6 +25,19 @@ if [ "$response" = "o" ] || [ "$response" = "O" ]; then
     
 fi
 
+
+echo ""
+echo "================================================"
+echo "TEST 2: Suppresion d'une transaction"
+echo "================================================"
+echo "Voulez-vous éxecuter le test? (o/n)"
+read -p "> " response
+
+if [ "$response" = "o" ] || [ "$response" = "O" ]; then
+    python tests/supr_transac.py
+    
+fi
+
 echo ""
 echo "================================================"
 echo "   TESTS TERMINÉS"
