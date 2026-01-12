@@ -10,8 +10,8 @@ app = Flask(__name__)
 DATA_FILE = "TCHAI-ELYES-MATHIEU/transactions.json"
 DATA_CORRUPTED = "TCHAI-ELYES-MATHIEU/transactions_corrupted.json"
 
-def hash_func(emitter, receptor, amount, timestamp):
-    transaction_string = f"{emitter}{receptor}{timestamp}{amount}"
+def hash_func(emitter, receptor, amount, timestamp, previous_hash):
+    transaction_string = f"{emitter}{receptor}{timestamp}{amount}{previous_hash}"
     return hashlib.sha256(transaction_string.encode()).hexdigest()
 
 def load_transactions():
@@ -23,8 +23,13 @@ def load_transactions():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             transactions = json.load(f)
-        for t in transactions: 
-            expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'])
+        for i, t in enumerate(transactions):
+            if i > 0:
+                t['previous_hash'] = transactions[i-1].get('hash')
+            else:
+                t['previous_hash'] = None
+            
+            expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'], t['previous_hash'])
             if t['hash'] != expected_hash:
                 errors.append({
                     "transaction_id": t['id'],
@@ -32,7 +37,9 @@ def load_transactions():
                     "found_hash": t['hash'],
                     "status" : "Corrompue"
                 })
-                transactions.remove(t)
+                # transactions.remove(t) # Plus tard on pourra demander la bonne transaction à un autre noeud
+                transactions = transactions[:i]
+                break
         with open(DATA_CORRUPTED, 'w') as f:
                 json.dump(errors, f, indent=2)
         save_transactions(transactions)
@@ -76,7 +83,9 @@ def new_transaction():
     emitter = data['emitter']
     receptor = data['receptor']
     timestamp = datetime.now().isoformat()
-    h = hash_func(emitter, receptor, amount, timestamp)
+
+    previous_hash = transactions[-1].get('hash') if transactions else None #A changer en un nombre au hasard pour pas "hacker" facilement
+    h = hash_func(emitter, receptor, amount, timestamp, previous_hash)
 
     transaction = {
         'id': len(transactions) + 1,
@@ -84,7 +93,8 @@ def new_transaction():
         'receptor': data['receptor'],
         'amount': amount,
         'timestamp': timestamp,
-        'hash': h
+        'hash': h,
+        'previous_hash': previous_hash
     }
     
     transactions.append(transaction)
@@ -138,14 +148,19 @@ def afficher_solde(person):
 @app.route('/verify', methods=['GET'])
 def verify_integrity():
     errors = []
-    for t in transactions:
-        expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'])
+    for i, t in enumerate(transactions):
+        if i > 0:
+            t['previous_hash'] = transactions[i-1].get('hash')
+        else:
+            t['previous_hash'] = None #pareil à changer en un nombre au hasard (le meme) pour pas "hacker" facilement
+        
+        expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'], t['previous_hash'])
         if t['hash'] != expected_hash:
             errors.append({
                 "transaction_id": t['id'],
                 "expected_hash": expected_hash,
                 "found_hash": t['hash'],
-                "status" : "Corrompue"
+                "status" : "Corrompue",
             })
     if not errors:
         return jsonify({
@@ -160,5 +175,6 @@ def verify_integrity():
             "corrupted_transactions": errors,
             "total_corrupted": len(errors)
             }), 418
+    
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

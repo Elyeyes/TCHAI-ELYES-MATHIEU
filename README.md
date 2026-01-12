@@ -252,4 +252,4 @@ On a que les transactions non corrompues (non attaqué), il faudrait ne pas perd
 Sinon la version simple c'est accepter de perdre des transactions
 
 ### Supprimer transaction
-On supprime une transactions stockés dans le fichier.
+On supprime une transactions stockés dans le fichier. Puis on vérifie qu'elle est bien supprimé. Le danger c'est dans le cas où il faut avoir le solde pour faire une transaction, exemple Alice doit avoir un solde de 100 pour donner 100 à Bob, alors si on supprime la ou les transactions qui ont permis à Alice d'avoir 100, mais que les transactions d'après d'Alice reste alors il y a un problème car elle aurait payé avec de l'argent qu'elle n'a pas, on peut voir après l'attaque le solde d'Alice est négatif. Par conséquent il faut supprimer toutes les transactions après la transaction attaqué (et supprimé). C'est ce que permet tchai_v3 avec le hash des transactions précédentes. A noter que seulement considérer les id (comme elles sont modifiable par attaque) n'est pas suffisant.
