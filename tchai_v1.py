@@ -5,7 +5,7 @@ import os
 
 app = Flask(__name__)
 
-DATA_FILE = "TCHAI-ELYES-MATHIEU/transactions.json"
+DATA_FILE = "transactions.json"
 
 def load_transactions():
     if os.path.exists(DATA_FILE):

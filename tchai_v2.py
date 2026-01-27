@@ -7,8 +7,8 @@ import os
 
 app = Flask(__name__)
 
-DATA_FILE = "TCHAI-ELYES-MATHIEU/transactions.json"
-DATA_CORRUPTED = "TCHAI-ELYES-MATHIEU/transactions_corrupted.json"
+DATA_FILE = "transactions.json"
+DATA_CORRUPTED = "transactions_corrupted.json"
 
 def hash_func(emitter, receptor, amount, timestamp):
     transaction_string = f"{emitter}{receptor}{timestamp}{amount}"

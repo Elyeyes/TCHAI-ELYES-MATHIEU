@@ -1,7 +1,7 @@
 # TCHAI-ELYES-MATHIEU
 chaine de transaction
 
-## Tchaî v2
+## Tchaî v3
 
 ### Base URL
 ```
@@ -224,8 +224,14 @@ GET /verify
 ## Points d'améliorations
 
 - Aucune authentification n'est implémentée
-- Les montants doivent être **positifs**
 - Pas de tracabilité des transactions (entre elles)
+- au lieu de copier la nouvelle liste de transactions (couteux si très grosse) "remplacer" et ajouter par rapport à la première difference
+Exemple: Si la transaction numéro 567 et différente alors prendre la bonne numéro 567 et toute celles d'après pas les 566 avant.
+
+
+## Utilisation
+
+Ne pas lancer de deuxième serveur pour une utilisation "normal"
 
 ## Tests
 ```bash
@@ -233,7 +239,6 @@ GET /verify
 pip install -r requirements.txt
 
 # 2. Lancer l'API principale
-python tchai_v1.py
 
 # 3. Dans un autre terminal, exécuter les tests
 chmod +x tests/run_tests.sh
@@ -252,4 +257,11 @@ On a que les transactions non corrompues (non attaqué), il faudrait ne pas perd
 Sinon la version simple c'est accepter de perdre des transactions
 
 ### Supprimer transaction
-On supprime une transactions stockés dans le fichier. Puis on vérifie qu'elle est bien supprimé. Le danger c'est dans le cas où il faut avoir le solde pour faire une transaction, exemple Alice doit avoir un solde de 100 pour donner 100 à Bob, alors si on supprime la ou les transactions qui ont permis à Alice d'avoir 100, mais que les transactions d'après d'Alice reste alors il y a un problème car elle aurait payé avec de l'argent qu'elle n'a pas, on peut voir après l'attaque le solde d'Alice est négatif. Par conséquent il faut supprimer toutes les transactions après la transaction attaqué (et supprimé). C'est ce que permet tchai_v3 avec le hash des transactions précédentes. A noter que seulement considérer les id (comme elles sont modifiable par attaque) n'est pas suffisant.
+On supprime une transactions stockés dans le fichier. Puis on vérifie qu'elle est bien supprimé. Le danger c'est dans le cas où il faut avoir le solde pour faire une transaction, exemple Alice doit avoir un solde de 100 pour donner 100 à Bob, alors si on supprime la ou les transactions qui ont permis à Alice d'avoir 100, mais que les transactions d'après d'Alice reste alors il y a un problème car elle aurait payé avec de l'argent qu'elle n'a pas, on peut voir après l'attaque le solde d'Alice est négatif. Par conséquent il faut supprimer toutes les transactions après la transaction attaqué (et supprimé). C'est ce que permet tchai_v3 avec le hash des transactions précédentes. A noter que seulement considérer les id (comme elles sont modifiable par attaque) n'est pas suffisant. Alors que le hash comme il dépend du timestamp impossible de le fausser.
+
+Le problème actuellement est que si il y a une attaque sur le systeme de sauvegarde des transactions on peut perdre toutes les transactions effectué et donc recommencer de zéro une chaine.
+
+Avec Tchai_B si il y a deux serveurs, et que un est attaqué alors au redémarrage il compare avec la liste de l'autre serveur et récupère si il y a plus de transactions honnêtes.
+
+### Ajouter une transaction frauduleuse
+Avec tchai_v3 cela fonctionne donc une personne peut être débité à tort.

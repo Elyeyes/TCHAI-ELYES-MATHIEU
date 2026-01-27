@@ -12,6 +12,8 @@ echo ""
 echo "Assurez-vous que l'API principale tourne sur le port 5000"
 read -p "Appuyez sur Entrée pour continuer..."
 
+echo "creation d'une chaine"
+python tests.creer_chaine.py
 
 echo ""
 echo "================================================"

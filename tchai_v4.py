@@ -4,44 +4,44 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 import json
 import os
+import requests
+import sys
 
 app = Flask(__name__)
 
-DATA_FILE = "transactions_5000.json"
-DATA_CORRUPTED = "transactions_5000_corrupted.json"
 
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
+print(f"Starting server on port {PORT}")
+DATA_FILE = f"transactions_{PORT}.json"
+DATA_CORRUPTED = f"transactions_corrupted_{PORT}.json"
+
+###################################################################################################################################
+##### DECLARATION FONCTION POUR LE SERVEUR #######
+##################################################################################################################################
+
+##### HASHAGE #######
+def proof_of_work(last_hash, transactions_data, difficulty=2):
+    nonce = 0
+    while True:
+        content = f"{last_hash}{transactions_data}{nonce}".encode()
+        guess_hash = hashlib.sha256(content).hexdigest()
+        if guess_hash[:difficulty] == "0" * difficulty:
+            return nonce, guess_hash
+        nonce += 1
+        
 def hash_func(emitter, receptor, amount, timestamp, previous_hash):
     transaction_string = f"{emitter}{receptor}{timestamp}{amount}{previous_hash}"
     return hashlib.sha256(transaction_string.encode()).hexdigest()
 
+
+##### LOAD ET SAVE #######
 def load_transactions():
-    if os.path.exists(DATA_CORRUPTED):
-        with open(DATA_CORRUPTED, 'r') as f:
-            errors = json.load(f)
-    else:
-        errors = []
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             transactions = json.load(f)
-        for i, t in enumerate(transactions):
-            if i > 0:
-                t['previous_hash'] = transactions[i-1].get('hash')
-            else:
-                t['previous_hash'] = None
-            
-            expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'], t['previous_hash'])
-            if t['hash'] != expected_hash:
-                errors.append({
-                    "transaction_id": t['id'],
-                    "expected_hash": expected_hash,
-                    "found_hash": t['hash'],
-                    "status" : "Corrompue"
-                })
-                # transactions.remove(t) # Plus tard on pourra demander la bonne transaction à un autre noeud
-                transactions = transactions[:i]
-                break
-        with open(DATA_CORRUPTED, 'w') as f:
-                json.dump(errors, f, indent=2)
+
+        message, i = verify(transactions)
+        transactions = transactions[:i]
         save_transactions(transactions)
         return transactions
     return []
@@ -50,7 +50,24 @@ def save_transactions(transactions):
     with open(DATA_FILE, 'w') as f:
         json.dump(transactions, f, indent=2)
 
+
+##### VERIFY #######
+def verify(transaction_):
+    for i, t in enumerate(transaction_):
+        expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'], t['previous_hash'])
+
+        if t['hash'] != expected_hash:
+            return "erreur: " f"Chaîne reçue corrompue à l'index {i}", i
+            
+        if i > 0 and t['previous_hash'] != transaction_[i-1].get('hash'):
+            return "erreur: " f"Coupure de chaîne à l'index {i}", i
+
+    return "message: " "Toutes les transactions sont justes.", None
+
 transactions = load_transactions()
+###################################################################################################################################
+### DECLARATION DES ROUTES FLASK ###
+###################################################################################################################################
 
 @app.route('/')
 def home():
@@ -99,12 +116,15 @@ def new_transaction():
     
     transactions.append(transaction)
     save_transactions(transactions)
-
+    
     return jsonify({
         "message": "Transaction enregistrée avec succès",
         "transaction": transaction
     }), 201
 
+###############################################################################################################################
+###############################################################################################################################
+###############################################################################################################################
 # Afficher toutes les transactions dans l'ordre chronologique
 @app.route('/transactions', methods=['GET'])
 def afficher_transactions():
@@ -147,34 +167,14 @@ def afficher_solde(person):
 
 @app.route('/verify', methods=['GET'])
 def verify_integrity():
-    errors = []
-    for i, t in enumerate(transactions):
-        if i > 0:
-            t['previous_hash'] = transactions[i-1].get('hash')
-        else:
-            t['previous_hash'] = None #pareil à changer en un nombre au hasard (le meme) pour pas "hacker" facilement
-        
-        expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'], t['previous_hash'])
-        if t['hash'] != expected_hash:
-            errors.append({
-                "transaction_id": t['id'],
-                "expected_hash": expected_hash,
-                "found_hash": t['hash'],
-                "status" : "Corrompue",
-            })
-    if not errors:
-        return jsonify({
-            "status": "Ok",
-            "message": "Toutes les transactions sont justes.",
-            "total_transactions": len(transactions)
-            }), 200
+    message, i = verify(transactions)
+    if i:
+        return jsonify(message, i), 418 
     else:
-        return jsonify({
-            "status": "Erreur",
-            "message": "Certaines transactions sont corrompues.",
-            "corrupted_transactions": errors,
-            "total_corrupted": len(errors)
-            }), 418
+        return jsonify(message, len(transactions)), 200
     
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=PORT)
+
+    
+# python app.py 5001

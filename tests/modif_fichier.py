@@ -3,12 +3,14 @@ import json
 import os
 import time
 
+from creer_chaine import creer_chaine
+
 API_URL = "http://localhost:5000"
-DATA_FILE = "C:/Users/elyes/Desktop/Document d'Elyes/Travail/Code/5A/Tchai/TCHAI-ELYES-MATHIEU/transactions.json"
+DATA_FILE = "C:/Users/elyes/Desktop/Document d'Elyes/Travail/Code/5A/Tchai/TCHAI-ELYES-MATHIEU/transactions_5000.json"
 
 def modif_fichier():
     print("=== Test d'attaque : Modification du fichier de données ===\n")
-    
+    creer_chaine()
     # 1. Créer une transaction légitime
     print("1. Création d'une transaction")
     transaction = {"emitter": "Alice", "receptor": "Bob", "amount": 1}
@@ -21,17 +23,17 @@ def modif_fichier():
 
     # 3. Attaque : Modifier directement le fichier
     print("\n3. Modification directe du fichier...")
-    time.sleep(0.5)  # Attendre que le fichier soit écrit
+    time.sleep(2)  # Attendre que le fichier soit écrit
     
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             data = json.load(f)
         
-        print(f"   Transaction à modifier: {data[0]}")
+        print(f"   Transaction à modifier: {data[1]}")
         
-        data[0]['amount'] = 1000
-        data[0]['description'] = "FALSIFIE PAR ATTAQUANT"
-        transaction = data[0]
+        data[1]['amount'] = 1000
+        data[1]['description'] = "FALSIFIE PAR ATTAQUANT"
+        transaction = data[1]
         with open(DATA_FILE, 'w') as f:
             json.dump(data, f, indent=2)
     else:
