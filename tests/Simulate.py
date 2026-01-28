@@ -72,4 +72,6 @@ if __name__ == "__main__":
     receptor_5000 = create_retrieve_keypair(5000)[1]
     receptor_5001 = create_retrieve_keypair(5001)[1]
     ask_transaction(5000, receptor_5000, 50.0)
+    ask_transaction(5000, receptor_5000, 50.0)
+    ask_transaction(5000, receptor_5000, 100.0)
     print("Transaction envoyée au port 5000")

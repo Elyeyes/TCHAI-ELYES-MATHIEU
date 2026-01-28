@@ -49,12 +49,6 @@ def load_transactions():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             transactions = json.load(f)
-
-        for i, t in enumerate(transactions):
-            if 'signature' not in t:
-                transactions = transactions[:i]
-                break
-
         message, i = verify_transaction(transactions)
         transactions = transactions[:i]
         save_transactions(transactions)
@@ -71,6 +65,9 @@ def save_transactions(transactions):
 ##### VERIFY #######
 def verify_transaction(transaction_):
     for i, t in enumerate(transaction_):
+        if 'signature' not in t:
+            return "erreur: " f"Signature manquante à l'index {i}", i
+        
         expected_hash = hash_func(t['emitter'], t['amount'], t['receptor'], t['signature'], t['timestamp'], t['previous_hash'])
 
         if t['hash'] != expected_hash:
@@ -90,7 +87,7 @@ transactions = load_transactions()
 @app.route('/')
 def home():
     return jsonify({
-        "message": "Bienvenue sur Tchai_v2",
+        "message": "Bienvenue sur Tchai_v4",
         "endpoints": {
             "POST /transaction": "Enregistrer une transaction",
             "GET /transactions": "Afficher toutes les transactions",
