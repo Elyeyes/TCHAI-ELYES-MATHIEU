@@ -223,16 +223,14 @@ GET /verify
 
 Désormais il y a le système de clé privé clé publique et de transaction signé donc une personne malveillante ne peut pas se faire passer pour monsieur X pour qu'il lui paye 10 crypto par exemple.
 
-## Points d'améliorations
-
-- on a les serveurs qui s'échange leur liste de transaction mais il n'y a pas encore de loop avec un proof of work pour s'accorder sur quelle liste si y a conflit et que les deux sont égale et juste
-- au lieu de copier la nouvelle liste de transactions (couteux si très grosse) "remplacer" et ajouter par rapport à la première difference
-Exemple: Si la transaction numéro 567 et différente alors prendre la bonne numéro 567 et toute celles d'après pas les 566 avant.
 
 
 ## Utilisation
 
-Ne pas lancer de deuxième serveur pour une utilisation "normal", utiliser Simulate.py pour pouvoir faire des transactions car elle simule des utilisateurs qui useront de leur clés.
+Ne pas lancer de deuxième serveur pour une utilisation "normal", utiliser Simulate.py pour pouvoir faire des transactions car elle simule des utilisateurs qui useront de leurs clés.
+
+## Tchai_Bitcoin
+Tchai_Bitcoin.py est une version amélioré qui permet de simuler plusieurs noeuds (2 pour l'instant) qui s'échange leur chain of transaction, quand une nouvelle transactions et effectué, le serveur qui la reçu cherche à resoudre le problème qui contient la transaction (trouver un hash qui commence par un certains nombre de 0) une fois résolu il peut transmettre la transaction aux autres noeuds. Par soucis de ressources le proof_of_work est executé que quand un serveur reçoit une demande de transaction pas quand leur chaine à gagner une transactions (la course ne commence pas à chaque mise à jour de leur chaine respective).
 
 ## Tests
 ```bash
@@ -267,3 +265,21 @@ Avec Tchai_B si il y a deux serveurs, et que un est attaqué alors au redémarra
 ### Ajouter une transaction frauduleuse
 Avec tchai_v3 cela fonctionne donc une personne peut être débité à tort. avec tests/add.py
 Avec tchai_v4 il faut une signature et donc disposer de sa clé privé pour usurper l'identité et lui soutirer de l'argent.
+
+
+### Tchai_Bitcoin
+Il faut noter que avec cette version les anciens tests ne marcheront même pas car il n'utilise pas de clé pour les transactions.
+Seulement il reste un dernier test à vérifier.
+
+### Modifier transaction et adapter la signature
+Avec Simulate_attack.py on modifie le fichier json du serveur 5000 (l'amount de la transaction) et on rehash pour tromper le serveur.
+python Simulate_attack.py (modifier DIFFICULTY dans Tchai_Bitcoin pour que le test soit plus rapide).
+On peut vérifier manuellement mais l'attaque ne fonctionne pas car le serveur revérifie la signature.
+
+Pour rappelle quand il y a un problème avec la chaine le serveur (serveur A par exemple) supprime a partir de l'erreur la transaction et celle d'après, mais après si l'autre serveur (serveur B) est up il lui demande sa liste. Dans un vrai réseau avec plein de nodes l'intégrité de la chain est maintenu car on ne peut pas attaquer des milliers de noeuds.
+
+
+## Points d'améliorations
+
+- au lieu de copier la nouvelle liste de transactions (couteux si très grosse) "remplacer" et ajouter par rapport à la première difference
+Exemple: Si la transaction numéro 567 et différente alors prendre la bonne numéro 567 et toute celles d'après pas les 566 avant.

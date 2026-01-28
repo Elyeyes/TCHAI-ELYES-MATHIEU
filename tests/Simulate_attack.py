@@ -1,3 +1,4 @@
+import hashlib
 from time import time, sleep
 from coincurve import PrivateKey, PublicKey
 import json
@@ -8,7 +9,38 @@ import requests
 # PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
 # KEY_FILE = f"keys_{PORT}.json"
 # neighbor_port = 5001 if PORT == 5000 else 5000
+
+API_URL = "http://localhost:5000"
+DATA_FILE = "C:/Users/elyes/Desktop/Document d'Elyes/Travail/Code/5A/Tchai/TCHAI-ELYES-MATHIEU/transactions_5000.json"
+
+
 neighbor_url = f"http://127.0.0.1:"
+
+def modif_hash():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, 'r') as f:
+            data = json.load(f)
+        
+        print(f"Transaction à modifier: {data[1]}")
+        
+        data[1]['amount'] = 99999999999
+        content = f"{data[1]['emitter']}{data[1]['amount']}{data[1]['receptor']}{data[1]['signature']}{data[1]['timestamp']}{data[1]['previous_hash']}{data[1]['nonce']}".encode()
+        attacked_hash = hashlib.sha256(content).hexdigest()
+        data[1]['hash'] = attacked_hash
+        tmp = data
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        print("########################################################################, \n, #################################### Redemarrer le serveur, \n")
+        input()
+        with open(DATA_FILE, 'r') as f:
+            data = json.load(f)
+        if tmp == data:
+            print("   Modification du fichier reussie")
+        else:
+            print("   Echec de la modification du fichier")
+    else:
+        print(f"   Fichier {DATA_FILE} non trouvé")
+        return
 
 def create_retrieve_keypair(port, new=False):
     key_file = f"keys_{port}.json"
@@ -72,5 +104,8 @@ if __name__ == "__main__":
     create_retrieve_keypair(0, new=False) # Si on veut être anonyme on peut générer autant de pairs qu'on veut
     receptor_5000 = create_retrieve_keypair(5000)[1]
     receptor_5001 = create_retrieve_keypair(5001)[1]
-    ask_transaction(5000, receptor_5000, 100.0)
+    # ask_transaction(5000, receptor_5000, 1.0)
+    ask_transaction(5000, receptor_5000, 1.0)
     print("Transaction envoyée au port 5000")
+    modif_hash()
+    print("")

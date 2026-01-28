@@ -14,7 +14,6 @@ app = Flask(__name__)
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
 print(f"Starting server on port {PORT}")
 DATA_FILE = f"transactions_{PORT}.json"
-DATA_CORRUPTED = f"transactions_corrupted_{PORT}.json"
 DIFFICULTY = 6  # Nombre de zeros requis au debut du hash pour le Proof of Work
 ###################################################################################################################################
 ##### DECLARATION FONCTION POUR LE SERVEUR #######
@@ -77,6 +76,17 @@ def save_transactions(transactions):
 ##### VERIFY #######
 def verify_chain(chain):
     for i, t in enumerate(chain):
+        emitter = t['emitter']
+        signature = t['signature']
+        data = {
+            "emitter": t['emitter'],
+            "amount": float(t['amount']),
+            "receptor": t['receptor']
+        }
+        signed = verify_signature(emitter, data, signature) # Si on modifie une transaction et qu'on rehash ça passe quand meme pas
+        if not signed:
+            return "erreur: " f"Signature invalide à l'index {i}", i
+        
         if 'signature' not in t:
             return "erreur: " f"Signature manquante à l'index {i}", i
         
@@ -231,7 +241,7 @@ def new_transaction():
 
         return jsonify({"message": "Transaction enregistree avec succes","transaction": transaction}), 201
     else:
-        transactions.pop()  # Retirer la transaction invalide
+        transactions.pop()  # Retirer la transaction invalide (elle est arrivé après l'ajout de la transaction du voisin)
         return jsonify({"erreur": "Transaction invalide apres ajout à la chaine", "detail": message}), 400
 ###############################################################################################################################
 ###############################################################################################################################

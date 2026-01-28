@@ -8,6 +8,7 @@ import requests
 # PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
 # KEY_FILE = f"keys_{PORT}.json"
 # neighbor_port = 5001 if PORT == 5000 else 5000
+
 neighbor_url = f"http://127.0.0.1:"
 
 def create_retrieve_keypair(port, new=False):
@@ -72,8 +73,5 @@ if __name__ == "__main__":
     create_retrieve_keypair(0, new=False) # Si on veut être anonyme on peut générer autant de pairs qu'on veut
     receptor_5000 = create_retrieve_keypair(5000)[1]
     receptor_5001 = create_retrieve_keypair(5001)[1]
-    # ask_transaction(5000, receptor_5000, 1.0)
-    # ask_transaction(5000, receptor_5000, 1.0)
-    # ask_transaction(5000, receptor_5000, 100.0)
     ask_transaction(5001, receptor_5001, 100.0)
     print("Transaction envoyée au port 5001")
