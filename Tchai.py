@@ -15,27 +15,16 @@ PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
 print(f"Starting server on port {PORT}")
 DATA_FILE = f"transactions_{PORT}.json"
 DATA_CORRUPTED = f"transactions_corrupted_{PORT}.json"
-DIFFICULTY = 6  # Nombre de zeros requis au debut du hash pour le Proof of Work
+
 ###################################################################################################################################
 ##### DECLARATION FONCTION POUR LE SERVEUR #######
 ##################################################################################################################################
 
 ##### HASHAGE #######
-def proof_of_work(emitter, amount, receptor, signature, timestamp, previous_hash):
-    print("Ca Mine...")
-    nonce = 0
-    time = datetime.now().timestamp()
-    while True:
-        content = f"{emitter}{amount}{receptor}{signature}{timestamp}{previous_hash}{nonce}".encode()
-        guess_hash = hashlib.sha256(content).hexdigest()
-        if guess_hash[:DIFFICULTY] == "0" * DIFFICULTY:
-            took = datetime.now().timestamp() - time 
-            print(f"Proof of Work found: {guess_hash} in {took:.2f} seconds with nonce {nonce}")
-            return nonce, guess_hash
-        nonce += 1       
 
-def hash_func(emitter, amount, receptor, signature, timestamp, previous_hash, nonce):
-    transaction_string = f"{emitter}{amount}{receptor}{signature}{timestamp}{previous_hash}{nonce}"
+
+def hash_func(emitter, amount, receptor, signature, timestamp, previous_hash):
+    transaction_string = f"{emitter}{amount}{receptor}{signature}{timestamp}{previous_hash}"
     return hashlib.sha256(transaction_string.encode()).hexdigest()
 
 def verify_signature(public_key, transaction, signature_hex):
@@ -48,11 +37,11 @@ def verify_signature(public_key, transaction, signature_hex):
             "receptor": transaction['receptor']
         }
         message = json.dumps(transaction, sort_keys=True).encode()
-        print(f"Verification de la signature pour l'emetteur {public_key.format(compressed=True).hex()}")
+        print(f"Vérification de la signature pour l'émetteur {public_key.format(compressed=True).hex()}")
         
         return public_key.verify(signature, message)
     except Exception as e:
-        print(f"Erreur de verification: {e}")
+        print(f"Erreur de vérification: {e}")
         return False
 
 ##### LOAD ET SAVE #######
@@ -80,19 +69,13 @@ def verify_chain(chain):
         if 'signature' not in t:
             return "erreur: " f"Signature manquante à l'index {i}", i
         
-        if 'nonce' not in t:
-            return "erreur: " f"ta oublie le nonce sont pas dans les anciens transactions Elyes {i}", i
-        
-        expected_hash = hash_func(t['emitter'], t['amount'], t['receptor'], t['signature'], t['timestamp'], t['previous_hash'], t['nonce'])
+        expected_hash = hash_func(t['emitter'], t['amount'], t['receptor'], t['signature'], t['timestamp'], t['previous_hash'])
 
         if t['hash'] != expected_hash:
             return "erreur: " f"Hash faux à l'index {i}", i
-            
-        if t['hash'][:DIFFICULTY] != "0" * DIFFICULTY:
-            return f"Proof of Work insuffisant à l'index {i}", i
         
         if i > 0 and t['previous_hash'] != chain[i-1].get('hash'):
-            return "erreur: " f"Coupure de chaine à l'index {i}", i
+            return "erreur: " f"Coupure de chaîne à l'index {i}", i
 
     return "message: " " Chaine justes.", None
 
@@ -111,14 +94,14 @@ def sync_with_neighbor():
             neighbor_data = response.json().get('transactions', [])
             message, i = verify_chain(neighbor_data)
             if i:
-                print("Le voisin a des donnees corrompues, synchro annulz, je lui envoi ma liste.")
+                print("Le voisin a des données corrompues, synchro annulé, je lui envoi ma liste.")
                 send_chain()
                 return False
                     
             if len(neighbor_data) > len(transactions):
                 transactions = neighbor_data
                 save_transactions(transactions)
-                print("Synchronisation reussie, liste mise à jour: \n", len(transactions), "transactions")
+                print("Synchronisation réussie, liste mise à jour: \n", len(transactions), "transactions")
                 return True
             elif len(neighbor_data) < len(transactions):
                 print("Ma liste est meilleur")
@@ -172,7 +155,7 @@ def receive_list():
         save_transactions(transactions)
 
     if len(neighbor_chain) <= len(transactions):
-        return jsonify({"message": "Ma chaine est dejà plus longue ou egale. Rejete."}), 200
+        return jsonify({"message": "Ma chaîne est déjà plus longue ou égale. Rejeté."}), 200
 
     message, i = verify_chain(neighbor_chain)
     if i:
@@ -180,9 +163,10 @@ def receive_list():
 
     transactions = neighbor_chain
     save_transactions(transactions)
-    print(f"Chaine mise à jour par un pair (Taille: {len(transactions)})")
+    print(f"Chaîne mise à jour par un pair (Taille: {len(transactions)})")
     
-    return jsonify({"message": "Chaine mise à jour avec succes"}), 200
+    return jsonify({"message": "Chaîne mise à jour avec succès"}), 200
+
 
 #Enregistrer une transaction
 @app.route('/transaction', methods=['POST'])
@@ -190,7 +174,7 @@ def new_transaction():
     data = request.get_json()
     
     if not data or 'emitter' not in data or 'receptor' not in data or 'amount' not in data or 'signature' not in data:
-        return jsonify({"erreur": "Donnees manquantes (emetteur, receveur, montant, signature requis)"}), 400
+        return jsonify({"erreur": "Données manquantes (emetteur, receveur, montant, signature requis)"}), 400
     
     try:
         amount = float(data['amount'])
@@ -203,14 +187,13 @@ def new_transaction():
     receptor = data['receptor']
     signature = data['signature']
     if not verify_signature(emitter, data, signature):
-        return jsonify({"transaction rejete": "Signature invalide"}), 400
+        return jsonify({"transaction rejeté": "Signature invalide"}), 400
     
     
     timestamp = datetime.now().isoformat()
     previous_hash = transactions[-1].get('hash') if transactions else "0" * 64 #A changer en un nombre au hasard pour pas "hacker" facilement
     
-    nonce, h = proof_of_work(emitter, amount, receptor, signature, timestamp, previous_hash)
-    # h = hash_func(emitter, amount, receptor, signature, timestamp, previous_hash)
+    h = hash_func(emitter, amount, receptor, signature, timestamp, previous_hash)
 
     transaction = {
         'hash': h,
@@ -219,20 +202,15 @@ def new_transaction():
         'receptor': receptor, #PublicKey
         'signature': signature,
         'timestamp': timestamp,
-        'previous_hash': previous_hash,
-        'nonce': nonce
+        'previous_hash': previous_hash
     }
     
     transactions.append(transaction)
-    message, i = verify_chain(transactions)
-    if i is None:
-        save_transactions(transactions)
-        send_chain()
+    save_transactions(transactions)
+    send_chain()
 
-        return jsonify({"message": "Transaction enregistree avec succes","transaction": transaction}), 201
-    else:
-        transactions.pop()  # Retirer la transaction invalide
-        return jsonify({"erreur": "Transaction invalide apres ajout à la chaine", "detail": message}), 400
+    return jsonify({"message": "Transaction enregistrée avec succès","transaction": transaction}), 201
+
 ###############################################################################################################################
 ###############################################################################################################################
 ###############################################################################################################################
@@ -242,7 +220,7 @@ def new_transaction():
 def afficher_transactions():
     return jsonify({"total": len(transactions), "transactions": transactions}), 200
 
-# Afficher les transactions liees à une personne donnee chronologiquement
+# Afficher les transactions liées à une personne donnée chronologiquement
 @app.route('/transactions/<person>', methods=['GET'])
 def afficher_transactions_personne(person):
     transactions_personne = [
