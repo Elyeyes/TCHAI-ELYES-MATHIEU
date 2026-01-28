@@ -6,6 +6,7 @@ import json
 import os
 import requests
 import sys
+from coincurve import PrivateKey, PublicKey
 
 app = Flask(__name__)
 
@@ -20,19 +21,28 @@ DATA_CORRUPTED = f"transactions_corrupted_{PORT}.json"
 ##################################################################################################################################
 
 ##### HASHAGE #######
-def proof_of_work(last_hash, transactions_data, difficulty=2):
-    nonce = 0
-    while True:
-        content = f"{last_hash}{transactions_data}{nonce}".encode()
-        guess_hash = hashlib.sha256(content).hexdigest()
-        if guess_hash[:difficulty] == "0" * difficulty:
-            return nonce, guess_hash
-        nonce += 1
+
         
-def hash_func(emitter, receptor, amount, timestamp, previous_hash):
-    transaction_string = f"{emitter}{receptor}{timestamp}{amount}{previous_hash}"
+def hash_func(emitter, amount, receptor, signature, timestamp, previous_hash):
+    transaction_string = f"{emitter}{amount}{receptor}{signature}{timestamp}{previous_hash}"
     return hashlib.sha256(transaction_string.encode()).hexdigest()
 
+def verify_signature(public_key, transaction, signature_hex):
+    try:
+        public_key = PublicKey(bytes.fromhex(public_key))
+        signature = bytes.fromhex(signature_hex)
+        transaction = {
+            "emitter": transaction['emitter'],
+            "amount": float(transaction['amount']),
+            "receptor": transaction['receptor']
+        }
+        message = json.dumps(transaction, sort_keys=True).encode()
+        print(f"Vérification de la signature pour l'émetteur {public_key.format(compressed=True).hex()}")
+        
+        return public_key.verify(signature, message)
+    except Exception as e:
+        print(f"Erreur de vérification: {e}")
+        return False
 
 ##### LOAD ET SAVE #######
 def load_transactions():
@@ -40,10 +50,17 @@ def load_transactions():
         with open(DATA_FILE, 'r') as f:
             transactions = json.load(f)
 
-        message, i = verify(transactions)
+        for i, t in enumerate(transactions):
+            if 'signature' not in t:
+                transactions = transactions[:i]
+                break
+
+        message, i = verify_transaction(transactions)
         transactions = transactions[:i]
         save_transactions(transactions)
+
         return transactions
+    save_transactions([])
     return []
 
 def save_transactions(transactions):
@@ -52,9 +69,9 @@ def save_transactions(transactions):
 
 
 ##### VERIFY #######
-def verify(transaction_):
+def verify_transaction(transaction_):
     for i, t in enumerate(transaction_):
-        expected_hash = hash_func(t['emitter'], t['receptor'], t['amount'], t['timestamp'], t['previous_hash'])
+        expected_hash = hash_func(t['emitter'], t['amount'], t['receptor'], t['signature'], t['timestamp'], t['previous_hash'])
 
         if t['hash'] != expected_hash:
             return "erreur: " f"Chaîne reçue corrompue à l'index {i}", i
@@ -65,6 +82,7 @@ def verify(transaction_):
     return "message: " "Toutes les transactions sont justes.", None
 
 transactions = load_transactions()
+
 ###################################################################################################################################
 ### DECLARATION DES ROUTES FLASK ###
 ###################################################################################################################################
@@ -87,8 +105,8 @@ def home():
 def new_transaction():
     data = request.get_json()
     
-    if not data or 'emitter' not in data or 'receptor' not in data or 'amount' not in data:
-        return jsonify({"erreur": "Données manquantes (emetteur, receveur, montant requis)"}), 400
+    if not data or 'emitter' not in data or 'receptor' not in data or 'amount' not in data or 'signature' not in data:
+        return jsonify({"erreur": "Données manquantes (emetteur, receveur, montant, signature requis)"}), 400
     
     try:
         amount = float(data['amount'])
@@ -99,18 +117,22 @@ def new_transaction():
     
     emitter = data['emitter']
     receptor = data['receptor']
+    signature = data['signature']
+    if not verify_signature(emitter, data, signature):
+        return jsonify({"transaction rejeté": "Signature invalide"}), 400
+    
+    
     timestamp = datetime.now().isoformat()
-
     previous_hash = transactions[-1].get('hash') if transactions else None #A changer en un nombre au hasard pour pas "hacker" facilement
-    h = hash_func(emitter, receptor, amount, timestamp, previous_hash)
+    h = hash_func(emitter, amount, receptor, signature, timestamp, previous_hash)
 
     transaction = {
-        'id': len(transactions) + 1,
-        'emitter': data['emitter'],
-        'receptor': data['receptor'],
-        'amount': amount,
-        'timestamp': timestamp,
         'hash': h,
+        'emitter': emitter, #PublicKey
+        'amount': amount,
+        'receptor': receptor, #PublicKey
+        'signature': signature,
+        'timestamp': timestamp,
         'previous_hash': previous_hash
     }
     
@@ -167,7 +189,7 @@ def afficher_solde(person):
 
 @app.route('/verify', methods=['GET'])
 def verify_integrity():
-    message, i = verify(transactions)
+    message, i = verify_transaction(transactions)
     if i:
         return jsonify(message, i), 418 
     else:

@@ -11,6 +11,8 @@ def load_transactions():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as f:
             return json.load(f)
+    
+    save_transactions([])
     return []
 
 def save_transactions(transactions):

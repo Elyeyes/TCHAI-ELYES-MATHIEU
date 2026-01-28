@@ -37,6 +37,8 @@ def load_transactions():
                 json.dump(errors, f, indent=2)
         save_transactions(transactions)
         return transactions
+    
+    save_transactions([])
     return []
 
 def save_transactions(transactions):

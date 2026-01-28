@@ -20,7 +20,6 @@ def add():
         with open(DATA_FILE, 'r') as f:
             data = json.load(f)
         last_t = data[-1]
-        id_ = last_t["id"] + 1
         emitter = "Victim"
         receptor = "Attacker"
         amount = 100.0
@@ -30,7 +29,6 @@ def add():
         hashed = hashlib.sha256(transaction_string.encode()).hexdigest()
 
         data.append({
-            "id": last_t["id"] + 1,
             "emitter": "Victim",
             "receptor": "Attacker",
             "amount": 100.0,
