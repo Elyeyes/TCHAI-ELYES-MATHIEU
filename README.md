@@ -1,7 +1,7 @@
 # TCHAI-ELYES-MATHIEU
 chaine de transaction
 
-## Tchaî v3
+## Tchaî v4
 
 ### Base URL
 ```
@@ -211,27 +211,28 @@ GET /verify
 
 ```json
 {
-  "id": 1,                                    // Identifiant unique auto-généré
-  "emitter": "nom",                           // Personne qui envoie
-  "receptor": "nom",                          // Personne qui reçoit
-  "amount": 50.0,                             // Montant de la transaction
-  "timestamp": "2024-03-15T14:30:00.123456",  // Date et heure
-  "hash": "9c9a78db16d62293b59bcb4c7b6fecfc982e874b1c8d6c31b9d93556ad01d247" // Hash de la transaction
+  "hash": h,
+  "emitter": emitter, ///PublicKey
+  "amount": amount,
+  "receptor": receptor, ///PublicKey
+  "signature": signature,
+  "timestamp": timestamp,
+  "previous_hash": previous_hash
 }
 ```
 
+Désormais il y a le système de clé privé clé publique et de transaction signé donc une personne malveillante ne peut pas se faire passer pour monsieur X pour qu'il lui paye 10 crypto par exemple.
 
 ## Points d'améliorations
 
-- Aucune authentification n'est implémentée
-- Pas de tracabilité des transactions (entre elles)
+- on a les serveurs qui s'échange leur liste de transaction mais il n'y a pas encore de loop avec un proof of work pour s'accorder sur quelle liste si y a conflit et que les deux sont égale et juste
 - au lieu de copier la nouvelle liste de transactions (couteux si très grosse) "remplacer" et ajouter par rapport à la première difference
 Exemple: Si la transaction numéro 567 et différente alors prendre la bonne numéro 567 et toute celles d'après pas les 566 avant.
 
 
 ## Utilisation
 
-Ne pas lancer de deuxième serveur pour une utilisation "normal"
+Ne pas lancer de deuxième serveur pour une utilisation "normal", utiliser Simulate.py pour pouvoir faire des transactions car elle simule des utilisateurs qui useront de leur clés.
 
 ## Tests
 ```bash
@@ -239,13 +240,13 @@ Ne pas lancer de deuxième serveur pour une utilisation "normal"
 pip install -r requirements.txt
 
 # 2. Lancer l'API principale
+python Tchai_Bitcoin.py
 
-# 3. Dans un autre terminal, exécuter les tests
-chmod +x tests/run_tests.sh
-./tests/run_tests.sh
 
-# Ou exécuter un test spécifique
-python tests/modif_fichier.py
+# 3 exécuter un test spécifique
+python tests/modif_fichier.py #pour tchai_v1
+python tests/suppr_transac.py #pour tchai_v2
+python tests/add.py #pour tchai_v3
 ```
 
 ### Modifier transaction
@@ -264,4 +265,5 @@ Le problème actuellement est que si il y a une attaque sur le systeme de sauveg
 Avec Tchai_B si il y a deux serveurs, et que un est attaqué alors au redémarrage il compare avec la liste de l'autre serveur et récupère si il y a plus de transactions honnêtes.
 
 ### Ajouter une transaction frauduleuse
-Avec tchai_v3 cela fonctionne donc une personne peut être débité à tort.
+Avec tchai_v3 cela fonctionne donc une personne peut être débité à tort. avec tests/add.py
+Avec tchai_v4 il faut une signature et donc disposer de sa clé privé pour usurper l'identité et lui soutirer de l'argent.
