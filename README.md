@@ -1,5 +1,5 @@
 # TCHAI-ELYES-MATHIEU
-chaine de transaction
+Concevoir un système de transactions fiable et décentralisé à l’aide d’API 
 
 ## Tchaî v4
 
