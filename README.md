@@ -1,5 +1,5 @@
 # TCHAI-ELYES-MATHIEU
-Concevoir un système de transactions fiable et décentralisé à l’aide d’API 
+Blockchain transactionnelle minimaliste inspirée de Bitcoin : UTXO, PoW, noeuds P2P, API. Zéro dépendance externe.
 
 ## Tchaî v4
 
