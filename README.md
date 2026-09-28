@@ -1,5 +1,5 @@
 # TCHAI-ELYES-MATHIEU
-Blockchain transactionnelle minimaliste inspirée de Bitcoin : UTXO, PoW, noeuds P2P, API. Zéro dépendance externe.
+Blockchain transactionnelle minimaliste inspirée de Bitcoin : UTXO, minage PoW, noeuds P2P, API. Zéro dépendance externe.
 
 ## Tchaî v4
 
